@@ -45,15 +45,21 @@ const registerUser = asyncHandler(async (req, res) => {
 
   await user.save({ validateBeforeSave: false });
   //send the email  using nodemailer
-  await sendEmail({
-    email: user?.email,
-    subject: "Please verify your email",
-    //email structure created by mailgen
-    mailgenContent: emailVerificationMailgenContent(
-      user.username,
-      `http://127.0.0.1:5500/frontend/pages/email-verify.html?token=${unHashedToken}`,
-    ),
-  });
+  try {
+    await sendEmail({
+      email: user?.email,
+      subject: "Please verify your email",
+      mailgenContent: emailVerificationMailgenContent(
+        user.username,
+        `http://127.0.0.1:5500/frontend/pages/email-verify.html?token=${unHashedToken}`
+      ),
+    });
+  } catch (error) {
+    console.error("Email sending failed:", error);
+    throw new ApiError(500, "Something went wrong while sending email.");
+  }
+
+
   //fetch the created user details
   const createdUser = await User.findById(user._id).select("-password -refreshToken -emailVerificationToken -emailVerificationExpiry",);
 
@@ -342,14 +348,20 @@ const forgotPasswordRequest = asyncHandler( async (req, res) => {
   await user.save({ validateBeforeSave: false });//save the token in DB
 
   //send the unhashed token to user email
-  await sendEmail({
-    email: user?.email,
-    subject: "Password reset request",
-    mailgenContent: forgotPasswordMailgenContent(
-      user.username,
-      `http://127.0.0.1:5500/frontend/pages/reset-password.html?token=${unHashedToken}`,
-    ),
-  });
+  try {
+    await sendEmail({
+      email: user?.email,
+      subject: "Password reset request",
+      mailgenContent: forgotPasswordMailgenContent(
+        user.username,
+        `http://127.0.0.1:5500/frontend/pages/reset-password.html?token=${unHashedToken}`
+      ),
+    });
+  } catch (error) {
+    console.error("Email sending failed:", error);
+    throw new ApiError(500, "Something went wrong while sending email");
+  }
+    
 
   return res
     .status(200)

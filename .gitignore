@@ -2,10 +2,10 @@
 node_modules/
 
 # environment variables
-backend/.env
+auth-system-backend/.env
 
 # notes / local files
-backend/note.txt
+auth-system-backendnote.txt
 
 # logs
 logs

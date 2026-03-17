@@ -1,20 +1,7 @@
 import Mailgen from "mailgen";
-import nodemailer from "nodemailer";
+import axios from "axios";
 
-// create transporter once (better for Render)
-const transporter = nodemailer.createTransport({
-  host: "smtp-relay.brevo.com",
-  port: 465,
-  secure: true,
-  auth: {
-    user: process.env.BREVO_USER,
-    pass: process.env.BREVO_PASS,
-  },
-  connectionTimeout: 10000,//10 sec
-  greetingTimeout: 10000,
-  socketTimeout: 20000,
-});
-
+// send email using Brevo API
 const sendEmail = async (options) => {
   const mailGenerator = new Mailgen({
     theme: "default",
@@ -24,25 +11,44 @@ const sendEmail = async (options) => {
     },
   });
 
-  const emailTextual = mailGenerator.generatePlaintext(options.mailgenContent);
+  const emailTextual = mailGenerator.generatePlaintext(
+    options.mailgenContent
+  );
   const emailHtml = mailGenerator.generate(options.mailgenContent);
 
-  const mail = {
-    from: '"Authentication System" <anjandas8427@gmail.com>',
-    to: options.email,
+  const mailPayload = {
+    sender: {
+      name: "Authentication System",
+      email: process.env.BREVO_USER,
+    },
+    to: [{ email: options.email }],
     subject: options.subject,
-    text: emailTextual,
-    html: emailHtml,
+    htmlContent: emailHtml,
+    textContent: emailTextual,
   };
 
   try {
-    const info = await transporter.sendMail(mail);
+    console.log("Sending email via Brevo API..");
 
-    console.log("Email sent successfully:", info.messageId);
+    const response = await axios.post(
+      "https://api.brevo.com/v3/smtp/email",
+      mailPayload,
+      {
+        headers: {
+          "api-key": process.env.BREVO_API_KEY,
+          "Content-Type": "application/json",
+        },
+      }
+    );
 
-    return info;
+    console.log("Email sent successfully:", response.data);
+
+    return response.data;
   } catch (error) {
-    console.error("Email sending failed:", error);
+    console.error(
+      "Email sending failed:",
+      error.response?.data || error.message
+    );
     throw error;
   }
 };

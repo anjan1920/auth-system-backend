@@ -85,14 +85,13 @@ userSchema.methods.isPasswordCorrect = async function (password) {
 
 userSchema.methods.generateAccessToken = function () {
   return jwt.sign(
-    //payload
     {
       _id: this._id,
       email: this.email,
       username: this.username,
-      role: this.role
+      role: this.role,
+      jti: crypto.randomUUID()   //jti need for redis seesion store
     },
-    //signature
     process.env.ACCESS_TOKEN_SECRET,
     { expiresIn: process.env.ACCESS_TOKEN_EXPIRY },
   );

@@ -2,6 +2,8 @@ import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 
+import './config/redis_connect.js'  // radis connection on startup
+
 const app = express();
 app.set("trust proxy", 1);
 // basic configurations
@@ -39,6 +41,8 @@ app.use("/api/v1/auth", authRouter);
 //app.use("/api/v1/projects", projectRouter);
 
 app.get("/", (req, res) => {
+  console.log("Home page hit..");
+  
   res.send("Welcome to Home");
 });
 

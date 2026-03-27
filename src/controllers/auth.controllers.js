@@ -11,7 +11,9 @@ import {
 import jwt from "jsonwebtoken";
 import crypto from 'crypto';
 
+import { setSession } from '../utils/redis_utils.js' //redis 
 
+import { deleteSession } from '../utils/redis_utils.js' //redis 
 
 
 
@@ -85,7 +87,7 @@ const registerUser = asyncHandler(async (req, res) => {
 const verifyEmail = asyncHandler(async (req, res) => {
   //extract the verification token
   console.log("Verifying email...");
-
+ 
   const { verificationToken } = req.params;
 
   if (!verificationToken) {
@@ -160,6 +162,7 @@ const login = asyncHandler(async (req, res) => {
 
       user.emailVerificationToken = hashedToken;
       user.emailVerificationExpiry = tokenExpiry;
+      
 
       await user.save({ validateBeforeSave: false });
       console.log("Sending email verification email..");
@@ -188,8 +191,23 @@ const login = asyncHandler(async (req, res) => {
   }
 
   // else email is verified -> Generate tokens
-  const { accessToken, refreshToken } =
-    await generateAccessAndRefreshTokens(user._id);
+  const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(user._id);
+
+  // decode the access token to get jti
+  const decodedAccessToken = jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET);
+
+  // set the redis session
+  const accessTokenJti = decodedAccessToken.jti;
+  const payload = { userId: user._id, email: user.email };
+  const ttlSecond = 15 * 60; // 15 mins
+
+  try {
+      await setSession(accessTokenJti, payload, ttlSecond);
+  } catch {
+      throw new ApiError(500, "Redis Session creation failed, please try again");
+  }
+
+      
 
   // Get safe user data
   const loggedInUser = await User.findById(user._id).select(
@@ -286,9 +304,25 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
     console.log("Generating new access & refresh Token");
 
     const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(user._id);
+    //start redis session
+    // decode the access token to get jti
+    const decodedAccessToken = jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET);
 
+    // set the redis session
+    const accessTokenJti = decodedAccessToken.jti;
+    const payload = { userId: user._id, email: user.email };
+    const ttlSecond = 15 * 60; // 15 mins
+
+    try {
+        await setSession(accessTokenJti, payload, ttlSecond);
+    } catch {
+        throw new ApiError(500, "Redis Session creation failed, please try again");
+    }
+    
+    //save refresh-token in db
     user.refreshToken = refreshToken;
     await user.save({ validateBeforeSave: false });
+
 
     //send the new tokens to user
     console.log("Sending new access and refreshToken to user");
@@ -313,25 +347,31 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
 
 
 const logoutUser = asyncHandler(async (req, res) => {
-  //find the user based on the id
+  //clear refresh token from DB
   await User.findByIdAndUpdate(
     req.user._id,
-    {
-      $set: {
-        refreshToken: "",
-      },
-    },
-    {
-      new: true,
-    },
+    { $set: { refreshToken: "" } },
+    { new: true }
   );
+
+  // get token from cookies or header (already verified by middleware)
+  const token = req.cookies?.accessToken || req.header("Authorization")?.replace("Bearer ", "");
+  
+  // decode to get jti - no need to verify again, middleware already did it
+  const decodedAccessToken = jwt.decode(token);  // jwt.decode not jwt.verify ← just decode
+  
+  try {
+    await deleteSession(decodedAccessToken.jti);
+  } catch {
+    throw new ApiError(500, "Session deletion failed");
+  }
+
   const options = {
     httpOnly: true,
     secure: true,
     sameSite: "None",
     path: "/"
   };
-  console.log("User logged out successfully");
 
   return res
     .status(200)
@@ -339,6 +379,7 @@ const logoutUser = asyncHandler(async (req, res) => {
     .clearCookie("refreshToken", options)
     .json(new ApiResponse(200, {}, "User logged out"));
 });
+
 
 
 const forgotPasswordRequest = asyncHandler(async (req, res) => {

@@ -302,3 +302,139 @@ only admin show this button
 -> server then verify the jwt ->then call the verifyRole("admin"),-> this check the payload 
 role i.e "admin" have the "admin" which is passed to the function have or not->
 after that the controller execute and get all the user count and the users -emailid,isEmailVerified etc..
+
+
+
+-----------------------------------------
+Integrating  Redis
+
+##Redis for token validation 
+// Key :`session:${jti}`   
+// Value - { userId, email }  
+
+##Memory Estimate Per Session
+
+Key:   "session:" + UUID --> 9 bytes   + 36 bytes  = ~45 bytes
+
+Value: { userId, email }-> "64abc123...", "user@gmail.com" ->24 bytes  +  20 bytes = ~50 bytes
+
+Redis overhead per key        = ~64 bytes
+Total per session             = ~160 bytes
+
+##Scale Estimate
+
+| Active Users | Memory Used |
+|---        |---|
+| 1,000     | ~160KB |
+| 10,000    | ~1.6MB |
+| 100,000   | ~16MB |
+| 1,000,000 | ~160MB |
+
+How Redis helps in token validation is:
+
+When a user logs in using email and password or hit refresh accessToken using refreshToken,
+we create a session in Redis.
+
+The key is the JTI (unique ID of the access token),
+and the value contains user info like email and userId.
+
+We also set a TTL of around 15 minutes,
+which matches the access token expiry.
+
+Now where this helps is:
+
+Normally, JWT is stateless.
+So even after logout, if someone still has the access token,
+and it hasn’t expired yet,
+they can still access protected routes.
+
+That’s the drawback of pure JWT.
+
+To solve this, we use Redis.
+
+When the user logs out,
+we delete the session from Redis using that JTI.
+
+Now if someone tries to use the old access token:
+
+->Server first verifies the JWT (signature + expiry)
+-> Then extracts the JTI
+->Then checks Redis:
+   "Does this session exist?"
+
+If Redis says NO:
+-> That means token is invalid (logged out)
+->Access is denied
+
+So Redis acts like a server-side control layer
+on top of JWT, making it stateful.
+
+
+Redis on rate limiting:
+When a user hits the login POST request using email and password,
+we create a counter in Redis.
+
+The key is based on the user identity,
+like email or IP address,
+and the initial value is set to 1.
+
+We also set a TTL of around 2 minutes,
+which defines our rate limit window.
+
+Now within this 2-minute window:
+
+-> Every time the same user (email/IP) hits the login API,
+-> we increment the counter using Redis (INCR).
+
+If the counter exceeds a threshold (for example, 5 attempts):
+
+-> The server blocks the request
+-> and returns a response like:
+  "Too many attempts, try again later"
+
+Now after the TTL expires:
+
+-> Redis automatically deletes that key
+-> so the counter resets
+-> If the user tries again after that,
+-> a new counter starts from 1,
+-> and the same process repeats.
+
+This prevents users from making multiple rapid login attempts
+and helps protect against brute force attacks.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Currently I have implemented Redis-based rate limiting 
+to prevent brute force attempts.
+
+To enhance security further, I would add an account lock mechanism.
+
+I would track failed login attempts using Redis with a TTL window, 
+and if attempts exceed a threshold, I would store a lockUntil timestamp 
+in the database.
+
+Before login, I would check if the account is locked, and block access 
+until the lock duration expires.
+
+This separates rate limiting from account-level security and ensures 
+persistence even if Redis restarts.

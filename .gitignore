@@ -5,7 +5,7 @@ node_modules/
 .env
 
 # notes / local files
-note.txt
+/note.txt
 
 # logs
 logs

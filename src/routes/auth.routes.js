@@ -26,7 +26,7 @@ import {
   userChangeCurrentPasswordValidator
 } from "../validators/index.js";
 
-
+import { loginRateLimiter } from  "../middlewares/rateLimiter.middleware.js"
 
 
 const router = Router();
@@ -54,16 +54,15 @@ router.route("/verify-email/:verificationToken").get(
 
 
 router.route("/login").post(
-  (req,res,next)=>{
+  (req, res, next) => {
     console.log("Incoming login request...");
-    next(); 
-
+    next();
   },
-    userLoginValidator(),//just collect the err in input
-    validate, //handle the err if any
-    login//logic
-  );
-  
+  userLoginValidator(), // collect validation errors
+  validate,             // send error response if invalid
+  loginRateLimiter,    
+  login                 // controller
+);
 
 
 router.route("/refresh-token").post(

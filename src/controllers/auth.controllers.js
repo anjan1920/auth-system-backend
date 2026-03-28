@@ -386,7 +386,7 @@ const forgotPasswordRequest = asyncHandler(async (req, res) => {
   console.log(`Email : ${email}`);
 
 
-  console.log(`Finding user using emil : ${email}`);
+  console.log(`Finding user using email : ${email}`);
 
   const user = await User.findOne({ email });
   console.log("User found.");
@@ -398,6 +398,13 @@ const forgotPasswordRequest = asyncHandler(async (req, res) => {
     throw new ApiError(404, "User does not exists", []);
   }
 
+  const isEmailVerified = user.isEmailVerified;
+  console.log("Email verified status:", isEmailVerified);
+
+  if (!isEmailVerified) {
+    console.log(" Email not verified . stopping reset flow");
+    throw new ApiError(404, "User email is not verified, Try login .", []);
+  }
   //generate forgot password tokens
   const { unHashedToken, hashedToken, tokenExpiry } = user.generateTemporaryToken();
 
@@ -413,7 +420,7 @@ const forgotPasswordRequest = asyncHandler(async (req, res) => {
       subject: "Password reset request",
       mailgenContent: forgotPasswordMailgenContent(
         user.username,
-        `http://127.0.0.1:5500/frontend/pages/reset-password.html?token=${unHashedToken}`
+        `http://127.0.0.1:5500/frontend/pages/reset-password.html?token=${unHashedToken}`//frontend on local host
       ),
     });
   } catch (error) {

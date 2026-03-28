@@ -4,6 +4,9 @@ import { asyncHandler } from "../utils/async-handler.js";
 import { ApiError } from "../utils/api-error.js";
 
 
+import { setSession } from '../utils/redis_utils.js' //redis 
+
+
 
 
 
@@ -58,15 +61,27 @@ const adminLogin = asyncHandler(async (req, res) => {
 
   // generate tokens
   console.log("Generating access and refresh tokens..");
+  const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(user._id);
 
-  const { accessToken, refreshToken } =
-    await generateAccessAndRefreshTokens(user._id);
+  // decode the access token to get jti
+  const decodedAccessToken = jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET);
+
+  // set the redis session
+  const accessTokenJti = decodedAccessToken.jti;
+  const payload = { userId: user._id, email: user.email };
+  const ttlSecond = 15 * 60; // 15 mins
+
+  try {
+    await setSession(accessTokenJti, payload, ttlSecond);
+  } catch {
+    throw new ApiError(500, "Redis Session creation failed, please try again");
+  };
 
   const loggedInUser = await User.findById(user._id).select(
     "-password -refreshToken -emailVerificationToken -emailVerificationExpiry"
   );
 
- const options = {
+  const options = {
     httpOnly: true,
     secure: true,
     sameSite: "None",

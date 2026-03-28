@@ -213,7 +213,7 @@ const login = asyncHandler(async (req, res) => {
     "-password -refreshToken -emailVerificationToken -emailVerificationExpiry"
   );
 
-  // 8. Cookie options
+  // Cookie options
   const options = {
     httpOnly: true,
     secure: true,

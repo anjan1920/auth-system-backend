@@ -1,22 +1,51 @@
 # 🚀 Authentication & Authorization Backend
 
-A production-style authentication system built using  **Node.js, Express, MongoDB, JWT, and Redis** , with secure session handling and role-based access control.
+A production-style authentication system built using **Node.js, Express, MongoDB, JWT, and Redis**, with secure session handling and role-based access control.
 
 Deployed on Render and integrated with **Brevo API** for email services.
 
 ---
 
+## 🌐 Live Demo
+
+👉 Frontend (Live Demo):
+[Open App](https://anjan1920.github.io/auth-system-frontend/pages/index.html)
+
+👉 Backend API:
+[View API](https://auth-system-backend-fdwu.onrender.com)
+
+---
+
+## 🔑 Test Credentials
+
+Use these to directly explore the system without registering:
+
+### 👤 Guest User
+
+- Email: `guest201@example.com`
+- Password: `guest2026`
+
+### 🛠 Admin User
+
+- Email: `admin@example.com`
+- Password: `admin2026`
+
+  👉 Note: First request may take ~30–60 seconds (Render cold start)
+
+---
+
+
 ## 🧠 Overview
 
 This project implements a complete authentication lifecycle:
 
-* User registration & email verification
-* Secure login with JWT (Access + Refresh Tokens)
-* Redis-based session validation
-* Logout with token invalidation
-* Password reset flow via email
-* Role-based authorization (Admin/User)
-* Rate limiting to prevent brute-force attacks
+- User registration & email verification
+- Secure login with JWT (Access + Refresh Tokens)
+- Redis-based session validation
+- Logout with token invalidation
+- Password reset flow via email
+- Role-based authorization (Admin/User)
+- Rate limiting to prevent brute-force attacks
 
 ---
 
@@ -24,28 +53,28 @@ This project implements a complete authentication lifecycle:
 
 ### Backend
 
-* Node.js
-* Express.js
-* MongoDB + Mongoose
+- Node.js
+- Express.js
+- MongoDB + Mongoose
 
 ### Authentication & Security
 
-* JWT (Access Token + Refresh Token)
-* Refresh Token Rotation
-* bcrypt (password hashing)
-* HTTP-only cookies
+- JWT (Access Token + Refresh Token)
+- Refresh Token Rotation
+- bcrypt (password hashing)
+- HTTP-only cookies
 
 ### Caching & Protection
 
-* Redis (session management + rate limiting)
+- Redis (session management + rate limiting)
 
 ### Email Service
 
-* Brevo (Production  API)
+- Brevo (Production API)
 
 ### Deployment
 
-* Render
+- Render
 
 ---
 
@@ -86,7 +115,7 @@ User logout
 → Clear cookies
 ```
 
-👉 Ensures tokens cannot be reused after logout (fixes JWT stateless issue)
+👉 Fixes JWT stateless logout issue (real-world problem)
 
 ---
 
@@ -94,9 +123,9 @@ User logout
 
 ### 1. Session Validation Layer
 
-* Key → `JTI`
-* Value → `{ userId, email }`
-* TTL → ~15 minutes
+- Key → `JTI`
+- Value → `{ userId, email }`
+- TTL → ~15 minutes
 
 👉 Redis acts as a **server-side control layer over JWT**
 
@@ -124,13 +153,15 @@ If attempts > 5:
 
 ## 🔐 Authorization
 
-* Role-Based Access Control (RBAC)
-* Roles:
-  * Admin
-  * User
-* Middleware-based protection:
-  * `auth.middleware.js`
-  * `role.middleware.js`
+- Role-Based Access Control (RBAC)
+- Roles:
+
+  - Admin
+  - User
+- Middleware:
+
+  - `auth.middleware.js`
+  - `role.middleware.js`
 
 ---
 
@@ -201,36 +232,50 @@ If attempts > 5:
 
 ---
 
-### User
-
-| Method | Endpoint                      | Description        |
-| ------ | ----------------------------- | ------------------ |
-| GET    | /api/v1/users/current-user    | Get logged-in user |
-| POST   | /api/v1/users/change-password | Change password    |
-| DELETE | /api/v1/users/delete-me       | Delete account     |
-
----
-
 ### Admin
 
-| Method | Endpoint                  | Description   |
-| ------ | ------------------------- | ------------- |
-| GET    | /api/v1/admin/login       | Admin login   |
-| GET    | /api/v1/admin/healthcheck | Health check  |
-| GET    | /api/v1/admin/getAllUsers | Get all users |
+| Method | Endpoint                  | Description  |
+| ------ | ------------------------- | ------------ |
+| POST   | /api/v1/admin/login       | Admin login  |
+| GET    | /api/v1/admin/healthcheck | Health check |
+| GET    | /api/v1/admin/getAllUsers | Get users    |
 
 ---
 
 ## 🚀 Deployment Notes
 
-* Backend deployed on Render
-* Redis (Key-Value store) used via **internal connection URL  of Render**
-* Environment variables configured in Render dashboard
+- Backend hosted on Render
+- Redis used via Render internal service
+- Environment variables configured in Render dashboard
 
 ---
 
-## 🔍 Testing
+## 🎯 Why This Project Matters
 
-* All APIs tested using Postman
+This is not just a basic login system.
+
+It demonstrates:
+
+- Production-level authentication design
+- Secure session handling
+- Token lifecycle management
+- Real-world security practices
+- Admin + user separation
+
+👉 Exactly what companies expect from backend engineers
 
 ---
+
+## 🔮 Future Improvements
+
+- OAuth (Google/Github login)
+- 2FA authentication
+- Advanced RBAC (permissions system)
+- API monitoring dashboard
+
+---
+
+## 👨‍💻 Author
+
+**Anjan**
+📲[LinkedIn](https://www.linkedin.com/in/anjan-das-22b278236/)

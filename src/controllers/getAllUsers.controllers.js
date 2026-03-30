@@ -7,7 +7,7 @@ const getAllUsers = asyncHandler(async (req, res) => {
   const totalUsers = await User.countDocuments();
 
   //  get users with limited fields
-  const users = await User.find({}).select("_id  username isEmailVerified");
+  const users = await User.find({}).select(" username isEmailVerified");
 
   // 3send response
   return res.status(200).json({

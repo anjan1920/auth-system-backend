@@ -1,7 +1,7 @@
 import { ApiError } from "../utils/api-error.js";
 
-//decline access of routes like delete,password-change,reset,forgot for specif ids
-//its only for test user and test admin ids
+//decline access to routes like delete,password-change, reset, forgot for specific IDs
+//it's only for test user and test admin ids
 
 //Get env string
 const idsString = process.env.PROTECTED_USER_IDS || "";
